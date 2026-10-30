@@ -14,12 +14,17 @@ struct ContentView: View {
         .immersive()
         .onAppear {
             Platform.keepAwake()
+            studio.composer.start()
             startTracking()
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
-            case .active: startTracking()
-            case .background: tracker.stop()
+            case .active:
+                studio.composer.start()
+                startTracking()
+            case .background:
+                tracker.stop()
+                studio.composer.pause()
             default: break
             }
         }

@@ -33,6 +33,21 @@ A native take on Google Arts & Culture's Splash Canvas: a full-screen, real-time
 
 The bottom-right buttons (help, camera preview, share, wash) are touch shortcuts.
 
+## Music
+
+The soundtrack is generated live (no audio files), so it reacts to every movement:
+
+- **Pad:** a soft, slowly breathing chord progression (Dmaj9 → Bm11 → Gmaj9 → A6sus, 8 s each). It gets brighter and fuller the more you paint.
+- **Point:** each bit of stroke plays a mallet note, like running a finger over a harp. Higher on screen = higher pitch, left/right = stereo position, faster = louder.
+- **Open hand:** soft three-note strums.
+- **Flick:** a sparkling bell run.
+- **Pinch:** a breathy whoosh that follows your stirring speed.
+- **Fist:** the pad swells while the wash charges, then a bell cascade.
+- **Picking a color:** a small chime.
+- **Night glow** switches the mallets to long glassy bells.
+
+All notes are on D major pentatonic, so nothing sounds wrong. Toggle music with the speaker button. Edit the sound in `Composer.swift` (what plays when) and `MusicDSP.swift` (the synth).
+
 ## How the pieces fit
 
 | File | Role |
@@ -43,6 +58,7 @@ The bottom-right buttons (help, camera preview, share, wash) are touch shortcuts
 | `Studio.swift` | Interaction model: hand matching, pose debouncing, prediction, brushes, splashes, hover-to-pick, HUD state |
 | `FluidSimulator.swift` / `Shaders.metal` | GPU fluid solver and display shader |
 | `Platform.swift` | iOS vs. macOS differences: canvas view, camera preview, touch/mouse input, sharing/saving |
+| `Composer.swift` / `MusicDSP.swift` | Gesture → music mapping; real-time synth (pad, FM mallets/bells, noise whoosh) via `AVAudioSourceNode` |
 | `CanvasRenderer.swift` | `MTKView` frame loop: hands → splats → fluid step → display; snapshots for sharing |
 | `HUDView.swift` | Palette, status chip, camera preview with tracked joints, gesture guide |
 | `Tuning.swift` | Every feel-related constant in one place |

@@ -109,6 +109,9 @@ struct HUDView: View {
 
     private var bottomControls: some View {
         HStack(spacing: 10) {
+            ControlButton(symbol: studio.musicOn ? "speaker.wave.2.fill" : "speaker.slash.fill") {
+                studio.toggleMusic()
+            }
             ControlButton(symbol: "questionmark") {
                 withAnimation { studio.showGuide = true }
             }
@@ -118,7 +121,7 @@ struct HUDView: View {
             ControlButton(symbol: "square.and.arrow.up") { studio.requestSnapshot() }
             ControlButton(symbol: "drop.fill") { studio.clearCanvas() }
         }
-        .position(x: layout.size.width - 16 - 104, y: layout.size.height - max(layout.safeBottom, 12) - 30)
+        .position(x: layout.size.width - 16 - 131, y: layout.size.height - max(layout.safeBottom, 12) - 30)
     }
 
     // MARK: Camera picture-in-picture
@@ -230,6 +233,7 @@ private struct GestureGuideView: View {
         Row(symbol: "hand.raised.fingers.spread.fill", title: "Open hand", detail: "Five fingers, five colors"),
         Row(symbol: "scope", title: "Hover a swatch", detail: "Hold your fingertip over a color to pick it"),
         Row(symbol: "drop.fill", title: "Hold a fist", detail: "Wash the canvas clean"),
+        Row(symbol: "music.note", title: "Listen", detail: "Your strokes play music: higher on screen, higher notes"),
     ]
 
     var body: some View {

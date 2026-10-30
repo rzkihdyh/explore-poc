@@ -48,6 +48,10 @@ final class Studio {
     var layout = HUDLayout()
     var snapshot: SnapshotImage?
     var flashMessage: String?
+    var musicOn = true
+
+    /// Generative soundtrack driven by the same gestures as the paint.
+    @ObservationIgnored let composer = Composer()
 
     // MARK: Engine state (not observed — changes every frame)
     @ObservationIgnored var snapshotRequested = false
@@ -232,6 +236,7 @@ final class Studio {
             splash(at: uv(of: CGPoint(x: center.x, y: layout.bandBottom)), direction: SIMD2(0, 1),
                    speed: 3.5, colors: burstColors(for: item), into: &burst)
             pendingSplats.append(contentsOf: burst)
+            composer.pick(index: index)
         }
     }
 
@@ -239,10 +244,17 @@ final class Studio {
         washRequested = true
         pendingSplats.append(.impulse(from: SIMD2(0.5, 0.5), to: SIMD2(0.5, 0.5), velocity: .zero,
                                       color: .zero, amount: 0, cover: 0, radius: 0.45, swirl: 220))
+        composer.wash()
         flash("Fresh canvas")
     }
 
     func requestSnapshot() { snapshotRequested = true }
+
+    func toggleMusic() {
+        musicOn.toggle()
+        composer.isMuted = !musicOn
+        flash(musicOn ? "Music on" : "Music off")
+    }
 
     func deliverSnapshot(_ image: CGImage?) {
         guard let image else { return }
@@ -271,6 +283,9 @@ final class Studio {
             seeded = true
         }
 
+        for hand in hands where !hand.isTouch && now - hand.lastSample > Tuning.handTimeout {
+            composer.forget(hand: hand.id)
+        }
         hands.removeAll { !$0.isTouch && now - $0.lastSample > Tuning.handTimeout }
 
         var bestDwell: (item: PaletteItem, progress: Double)?
@@ -281,6 +296,7 @@ final class Studio {
         }
 
         publishHUD(now: now, dt: dt, dwell: bestDwell)
+        composer.endFrame(dt: dt, now: now, night: style == .night)
 
         let wash = washRequested
         washRequested = false
@@ -375,10 +391,13 @@ final class Studio {
             if canEmit && !overPalette {
                 emitStroke(from: hand.previousCursor, to: hand.cursor, dt: dt, speed: hand.speed,
                            color: color, brush: .paint, into: &splats)
+                composer.paint(hand: hand.id, at: hand.cursor, distance: distance, speed: hand.speed,
+                               now: now, night: style == .night)
                 if hand.speed > Tuning.flickSpeed && hand.splashCooldown <= 0 && distance > 0 {
                     splash(at: hand.cursor, direction: motion / distance, speed: hand.speed,
                            colors: [color, ColorMath.shiftHue(color, by: 0.05), ColorMath.shiftHue(color, by: -0.05)],
                            into: &splats)
+                    composer.splash(at: hand.cursor, speed: hand.speed)
                     hand.splashCooldown = Tuning.splashCooldown
                 }
             }
@@ -391,6 +410,7 @@ final class Studio {
             if canEmit {
                 emitStroke(from: hand.previousCursor, to: hand.cursor, dt: dt, speed: hand.speed,
                            color: .zero, brush: .stir, into: &splats)
+                composer.stir(speed: hand.speed)
             }
             cursors.append(CursorMark(position: hand.cursor, radius: 0.06, progress: 0,
                                       color: SIMD4(1, 1, 1, 1), style: 1, alpha: alpha))
@@ -411,7 +431,12 @@ final class Studio {
             if canEmit && hand.speed > Tuning.flickSpeed && hand.splashCooldown <= 0 && distance > 0 {
                 splash(at: hand.cursor, direction: motion / distance, speed: hand.speed * 1.2,
                        colors: colors, into: &splats)
+                composer.splash(at: hand.cursor, speed: hand.speed * 1.2)
                 hand.splashCooldown = Tuning.splashCooldown
+            }
+            if canEmit {
+                composer.strum(hand: hand.id, at: hand.cursor, distance: distance, speed: hand.speed,
+                               now: now, night: style == .night)
             }
 
         case .fist:
@@ -423,6 +448,7 @@ final class Studio {
                 }
             }
             let progress = hand.washFired ? 1 : min(hand.fistTime / Tuning.washHold, 1)
+            if !hand.washFired { composer.swell(progress) }
             cursors.append(CursorMark(position: hand.cursor, radius: 0.05, progress: progress,
                                       color: SIMD4(0.35, 0.75, 1.0, 1), style: 3, alpha: alpha))
         }

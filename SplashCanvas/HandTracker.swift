@@ -112,6 +112,10 @@ nonisolated final class HandTracker: NSObject, AVCaptureVideoDataOutputSampleBuf
               let input = try? AVCaptureDeviceInput(device: device) else { return false }
 
         session.beginConfiguration()
+        #if os(iOS)
+        // Leave the audio session to the music engine.
+        session.automaticallyConfiguresApplicationAudioSession = false
+        #endif
         if session.canSetSessionPreset(.vga640x480) { session.sessionPreset = .vga640x480 }
         guard session.canAddInput(input) else {
             session.commitConfiguration()
